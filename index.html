@@ -1025,37 +1025,29 @@
 </div>
 
 <script>
-// ========== DATA（スプレッドシートから動的取得）==========
+// ========== DATA（HTMLに埋め込み）==========
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxYhHA4Pl5MAvBHnPkSEM87x1VWk2UlrisrwBFtiBDFqbR8sa-IZUonC2RoepEjAOqeVw/exec';
 
-let EMPLOYEES = [];
-let KOJI_LIST = [];
+const EMPLOYEES = [
+  { id: 'E001', name: '中峰 勝美',   pin: '4198', isAdmin: false },
+  { id: 'E002', name: '小林 正明',   pin: '5268', isAdmin: false },
+  { id: 'E003', name: '三谷 正喜',   pin: '0695', isAdmin: true  },
+  { id: 'E004', name: '生出 学',     pin: '9924', isAdmin: false },
+  { id: 'E005', name: '菊池 亘史',   pin: '5429', isAdmin: false },
+  { id: 'E006', name: '三谷 亮輔',   pin: '5755', isAdmin: true  },
+  { id: 'E007', name: '岩本 全史',   pin: '1276', isAdmin: true  },
+  { id: 'E008', name: '高橋 寿文',   pin: '1990', isAdmin: false },
+  { id: 'E009', name: '楠 穣',       pin: '7504', isAdmin: false },
+  { id: 'E010', name: '久保木 彰博', pin: '0969', isAdmin: false },
+  { id: 'E011', name: '渋谷 文廣',   pin: '8929', isAdmin: false },
+];
 
-// 起動時にスプレッドシートから読み込む
-async function loadMasterData() {
+function loadMasterData() {
   const loginBox = document.getElementById('loginBox');
   const loadingMsg = document.getElementById('loadingMsg');
-  loadingMsg.textContent = '⏳ データを読み込み中…';
-  try {
-    const res = await fetch(GAS_URL + '?api=1');
-    const json = await res.json();
-    if (json.status === 'ok') {
-      EMPLOYEES = json.employees.map((e, i) => ({
-        id: 'E' + String(i+1).padStart(3,'0'),
-        name: e.name,
-        pin: e.pin,
-        isAdmin: e.isAdmin
-      }));
-      KOJI_LIST = json.kojiList;
-      loadingMsg.textContent = '';
-      loginBox.style.display = 'block';
-      initEmployeeSelect();
-    } else {
-      loadingMsg.textContent = '❌ 読み込み失敗。再読み込みしてください。';
-    }
-  } catch (err) {
-    loadingMsg.textContent = '❌ 通信エラー。ネット接続を確認してください。';
-  }
+  loadingMsg.textContent = '';
+  loginBox.style.display = 'block';
+  initEmployeeSelect();
 }
 
 // Storage keys
