@@ -1,0 +1,1759 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>自動車日報システム</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Share+Tech+Mono&display=swap');
+
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #21262d;
+    --border: #30363d;
+    --accent: #58a6ff;
+    --accent2: #3fb950;
+    --warn: #f85149;
+    --text: #e6edf3;
+    --text2: #8b949e;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* ========== SCREENS ========== */
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ========== LOGIN ========== */
+  #loginScreen {
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: radial-gradient(ellipse at 50% 0%, #1a2744 0%, var(--bg) 60%);
+  }
+
+  .login-box {
+    width: 100%;
+    max-width: 360px;
+  }
+
+  .login-logo {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+
+  .login-logo .icon {
+    width: 64px; height: 64px;
+    background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+    border-radius: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    margin-bottom: 12px;
+    box-shadow: 0 8px 24px rgba(59,130,246,0.3);
+  }
+
+  .login-logo h1 {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+  }
+
+  .login-logo p {
+    color: var(--text2);
+    font-size: 12px;
+    margin-top: 4px;
+  }
+
+  .login-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+  }
+
+  .pin-label {
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 8px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+  }
+
+  .employee-select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 15px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    font-family: inherit;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238b949e' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    cursor: pointer;
+  }
+
+  .pin-display {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+
+  .pin-dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    transition: all 0.15s;
+  }
+
+  .pin-dot.filled {
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 0 8px rgba(88,166,255,0.5);
+  }
+
+  .numpad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .num-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 20px;
+    font-family: 'Share Tech Mono', monospace;
+    height: 56px;
+    cursor: pointer;
+    transition: all 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .num-btn:active { transform: scale(0.95); background: #2d333b; }
+  .num-btn.del { font-size: 14px; color: var(--warn); }
+  .num-btn.zero { grid-column: 2; }
+
+  .login-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+    border: none;
+    border-radius: var(--radius);
+    color: white;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: inherit;
+    height: 48px;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: opacity 0.2s;
+  }
+
+  .login-btn:hover { opacity: 0.9; }
+
+  .error-msg {
+    color: var(--warn);
+    font-size: 12px;
+    text-align: center;
+    margin-top: 12px;
+    min-height: 18px;
+  }
+
+  /* ========== HEADER ========== */
+  .app-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .header-icon { font-size: 20px; }
+  .header-title { font-size: 15px; font-weight: 700; }
+  .header-sub { font-size: 11px; color: var(--text2); }
+
+  .logout-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text2);
+    font-size: 11px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .logout-btn:hover { border-color: var(--warn); color: var(--warn); }
+
+  /* ========== TABS ========== */
+  .tab-bar {
+    display: flex;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text2);
+    font-size: 12px;
+    font-family: inherit;
+    padding: 10px 4px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .tab-btn .tab-icon { font-size: 18px; }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ========== CONTENT ========== */
+  .tab-content { display: none; flex: 1; padding: 16px; overflow-y: auto; }
+  .tab-content.active { display: block; }
+
+  /* ========== FORM ========== */
+  .section-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+
+  .section-title {
+    background: var(--surface2);
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text2);
+    letter-spacing: 0.08em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .form-row {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .form-row:last-child { border-bottom: none; }
+
+  .form-label {
+    font-size: 12px;
+    color: var(--text2);
+    min-width: 72px;
+    flex-shrink: 0;
+  }
+
+  .form-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 14px;
+    padding: 7px 10px;
+    font-family: inherit;
+    width: 100%;
+  }
+
+  .form-input:focus { outline: none; border-color: var(--accent); }
+
+  select.form-input {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath fill='%238b949e' d='M1 1l4 4 4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+  }
+
+  /* ========== TIME INPUTS ========== */
+  .time-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .time-row:last-child { border-bottom: none; }
+
+  .time-cell label {
+    font-size: 10px;
+    color: var(--text2);
+    display: block;
+    margin-bottom: 3px;
+    font-weight: 500;
+  }
+
+  .time-cell input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 13px;
+    padding: 6px 8px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .time-cell input:focus { outline: none; border-color: var(--accent); }
+
+  .dest-cell {
+    grid-column: 1 / -1;
+  }
+
+  .dest-cell label {
+    font-size: 10px;
+    color: var(--text2);
+    display: block;
+    margin-bottom: 3px;
+  }
+
+  .dest-cell input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 13px;
+    padding: 7px 10px;
+    font-family: inherit;
+  }
+
+  .dest-cell input:focus { outline: none; border-color: var(--accent); }
+
+  .add-dest-btn {
+    width: 100%;
+    background: none;
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    color: var(--text2);
+    font-size: 13px;
+    padding: 10px;
+    cursor: pointer;
+    font-family: inherit;
+    margin: 8px 14px;
+    width: calc(100% - 28px);
+    transition: all 0.2s;
+  }
+
+  .add-dest-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ========== CHECKLIST ========== */
+  .check-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+
+  .check-item {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .check-item:nth-child(2n) { border-right: none; }
+  .check-item:nth-last-child(-n+2) { border-bottom: none; }
+  .check-item:hover { background: var(--surface2); }
+
+  .check-item input[type=checkbox] { display: none; }
+
+  .check-box {
+    width: 20px; height: 20px;
+    border: 2px solid var(--border);
+    border-radius: 4px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    transition: all 0.15s;
+  }
+
+  .check-item.checked .check-box {
+    background: var(--accent2);
+    border-color: var(--accent2);
+  }
+
+  .check-item.checked .check-box::after { content: '✓'; color: white; font-weight: 700; }
+
+  .check-label { font-size: 12px; }
+
+  /* ========== METER ========== */
+  .meter-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 10px 14px;
+  }
+
+  .meter-cell label {
+    font-size: 10px;
+    color: var(--text2);
+    display: block;
+    margin-bottom: 3px;
+  }
+
+  .meter-cell input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 15px;
+    padding: 8px 10px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .meter-cell input:focus { outline: none; border-color: var(--accent); }
+
+  .distance-badge {
+    margin: 0 14px 12px;
+    background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(59,130,246,0.05));
+    border: 1px solid rgba(59,130,246,0.3);
+    border-radius: 8px;
+    padding: 10px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .distance-badge span:first-child { font-size: 12px; color: var(--text2); }
+  .distance-badge span:last-child { font-size: 20px; font-family: 'Share Tech Mono'; color: var(--accent); }
+
+  /* ========== SUBMIT BTN ========== */
+  .submit-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #166534, #16a34a);
+    border: none;
+    border-radius: var(--radius);
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: inherit;
+    height: 52px;
+    cursor: pointer;
+    margin-top: 8px;
+    letter-spacing: 0.05em;
+    transition: opacity 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .submit-btn:hover { opacity: 0.9; }
+
+  /* ========== HISTORY / ADMIN ========== */
+  .report-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+
+  .report-card-header {
+    background: var(--surface2);
+    padding: 10px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .report-date { font-size: 13px; font-weight: 700; }
+  .report-driver { font-size: 11px; color: var(--text2); }
+  .report-km {
+    font-family: 'Share Tech Mono';
+    font-size: 14px;
+    color: var(--accent);
+  }
+
+  .report-body { padding: 10px 14px; }
+
+  .report-dest-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .report-dest-row:last-child { border-bottom: none; }
+  .report-dest-name { color: var(--text); }
+  .report-dest-time { color: var(--text2); font-family: 'Share Tech Mono'; font-size: 11px; }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    text-align: center;
+  }
+
+  .stat-num {
+    font-size: 28px;
+    font-family: 'Share Tech Mono';
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .stat-label { font-size: 11px; color: var(--text2); margin-top: 4px; }
+
+  .filter-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .filter-select {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 13px;
+    padding: 8px 10px;
+    font-family: inherit;
+    appearance: none;
+  }
+
+  /* ========== SUCCESS OVERLAY ========== */
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .overlay.show { display: flex; }
+
+  .success-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px 28px;
+    text-align: center;
+    max-width: 280px;
+    width: 90%;
+  }
+
+  .success-icon {
+    font-size: 48px;
+    display: block;
+    margin-bottom: 12px;
+    animation: pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes pop {
+    from { transform: scale(0); }
+    to { transform: scale(1); }
+  }
+
+  .success-box h3 { font-size: 18px; margin-bottom: 8px; }
+  .success-box p { color: var(--text2); font-size: 13px; margin-bottom: 20px; }
+
+  .ok-btn {
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: inherit;
+    padding: 10px 28px;
+    cursor: pointer;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .badge-admin { background: rgba(248,81,73,0.2); color: var(--warn); border: 1px solid var(--warn); }
+  .badge-user { background: rgba(88,166,255,0.15); color: var(--accent); border: 1px solid var(--accent); }
+
+  .weather-options {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .weather-opt {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 12px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+
+  .weather-opt.selected { background: rgba(88,166,255,0.2); border-color: var(--accent); color: var(--accent); }
+
+  .alcohol-row {
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .alc-label { font-size: 12px; color: var(--text2); flex: 1; }
+
+  .alc-options {
+    display: flex;
+    gap: 6px;
+  }
+
+  .alc-opt {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 12px;
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+
+  .alc-opt.ok { }
+  .alc-opt.ok.selected { background: rgba(63,185,80,0.2); border-color: var(--accent2); color: var(--accent2); }
+  .alc-opt.ng.selected { background: rgba(248,81,73,0.2); border-color: var(--warn); color: var(--warn); }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text2);
+    font-size: 13px;
+  }
+
+  .empty-state .empty-icon { font-size: 40px; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<!-- ========== LOGIN SCREEN ========== -->
+<div id="loginScreen" class="screen active">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="icon">🚗</div>
+      <h1>自動車日報</h1>
+      <p>Vehicle Daily Report System</p>
+    </div>
+    <div id="loadingMsg" style="text-align:center;color:var(--text2);font-size:13px;margin-bottom:12px;"></div>
+    <div id="loginBox" style="display:none;">
+    <div class="login-card">
+      <div class="pin-label">社員を選択</div>
+      <select class="employee-select" id="employeeSelect">
+        <option value="">-- 名前を選択してください --</option>
+      </select>
+
+      <div class="pin-label">PINコードを入力</div>
+      <div class="pin-display" id="pinDisplay">
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+      </div>
+
+      <div class="numpad">
+        <button class="num-btn" onclick="numPress('1')">1</button>
+        <button class="num-btn" onclick="numPress('2')">2</button>
+        <button class="num-btn" onclick="numPress('3')">3</button>
+        <button class="num-btn" onclick="numPress('4')">4</button>
+        <button class="num-btn" onclick="numPress('5')">5</button>
+        <button class="num-btn" onclick="numPress('6')">6</button>
+        <button class="num-btn" onclick="numPress('7')">7</button>
+        <button class="num-btn" onclick="numPress('8')">8</button>
+        <button class="num-btn" onclick="numPress('9')">9</button>
+        <button class="num-btn del" onclick="numDel()">⌫</button>
+        <button class="num-btn zero" onclick="numPress('0')">0</button>
+      </div>
+
+      <button class="login-btn" onclick="doLogin()">ログイン</button>
+      <div class="error-msg" id="errorMsg"></div>
+    </div>
+    </div><!-- /loginBox -->
+  </div>
+</div>
+
+<!-- ========== MAIN APP SCREEN ========== -->
+<div id="appScreen" class="screen">
+  <div class="app-header">
+    <div class="header-left">
+      <span class="header-icon">🚗</span>
+      <div>
+        <div class="header-title" id="headerName">-</div>
+        <div class="header-sub" id="headerDate">-</div>
+      </div>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">ログアウト</button>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('report')" id="tabReport">
+      <span class="tab-icon">📝</span>日報入力
+    </button>
+    <button class="tab-btn" onclick="switchTab('kojiSearch')" id="tabKojiSearch">
+      <span class="tab-icon">🔍</span>工事台帳
+    </button>
+    <button class="tab-btn" onclick="switchTab('history')" id="tabHistory">
+      <span class="tab-icon">📋</span>履歴
+    </button>
+    <button class="tab-btn" onclick="switchTab('admin')" id="tabAdmin" style="display:none">
+      <span class="tab-icon">⚙️</span>管理
+    </button>
+  </div>
+
+  <!-- ======= TAB: REPORT ======= -->
+  <div class="tab-content active" id="contentReport">
+
+    <!-- 基本情報 -->
+    <div class="section-card">
+      <div class="section-title">📅 基本情報</div>
+      <div class="form-row">
+        <span class="form-label">日付</span>
+        <input type="date" class="form-input" id="inputDate">
+      </div>
+      <div class="form-row">
+        <span class="form-label">天候</span>
+        <div class="weather-options" id="weatherOptions">
+          <button class="weather-opt selected" onclick="selectWeather(this,'晴')">☀️ 晴</button>
+          <button class="weather-opt" onclick="selectWeather(this,'曇')">☁️ 曇</button>
+          <button class="weather-opt" onclick="selectWeather(this,'雨')">🌧 雨</button>
+          <button class="weather-opt" onclick="selectWeather(this,'雪')">❄️ 雪</button>
+        </div>
+      </div>
+      <div class="form-row">
+        <span class="form-label">車両名</span>
+        <select class="form-input" id="inputVehicle">
+          <option>7627</option>
+          <option>9998</option>
+          <option>1071</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <span class="form-label">同乗者</span>
+        <input type="text" class="form-input" id="inputPassenger" placeholder="なし">
+      </div>
+    </div>
+
+    <!-- 始業点検 -->
+    <div class="section-card">
+      <div class="section-title">🔧 始業点検</div>
+      <div class="check-grid" id="checkGrid">
+        <div class="check-item" onclick="toggleCheck(this)">
+          <div class="check-box"></div>
+          <span class="check-label">エンジンオイル</span>
+        </div>
+        <div class="check-item" onclick="toggleCheck(this)">
+          <div class="check-box"></div>
+          <span class="check-label">ブレーキオイル</span>
+        </div>
+        <div class="check-item" onclick="toggleCheck(this)">
+          <div class="check-box"></div>
+          <span class="check-label">ラジエーター</span>
+        </div>
+        <div class="check-item" onclick="toggleCheck(this)">
+          <div class="check-box"></div>
+          <span class="check-label">ブレーキのきき</span>
+        </div>
+        <div class="check-item" onclick="toggleCheck(this)">
+          <div class="check-box"></div>
+          <span class="check-label">バッテリー液量</span>
+        </div>
+        <div class="check-item" onclick="toggleCheck(this)">
+          <div class="check-box"></div>
+          <span class="check-label">ブレーキランプ</span>
+        </div>
+        <div class="check-item" onclick="toggleCheck(this)">
+          <div class="check-box"></div>
+          <span class="check-label">タイヤ空気圧</span>
+        </div>
+        <div class="check-item" onclick="toggleCheck(this)">
+          <div class="check-box"></div>
+          <span class="check-label">方向指示器</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- メーター -->
+    <div class="section-card">
+      <div class="section-title">🔢 メーター</div>
+      <div class="meter-row">
+        <div class="meter-cell">
+          <label>始業メーター (km)</label>
+          <input type="number" id="meterStart" placeholder="0" oninput="calcDistance()">
+        </div>
+        <div class="meter-cell">
+          <label>終業メーター (km)</label>
+          <input type="number" id="meterEnd" placeholder="0" oninput="calcDistance()">
+        </div>
+      </div>
+      <div class="distance-badge">
+        <span>本日の延走行距離</span>
+        <span id="distanceBadge">— km</span>
+      </div>
+    </div>
+
+    <!-- 行先・時間 -->
+    <div class="section-card">
+      <div class="section-title">📍 行先・時間記録</div>
+      <!-- 事務所出発時間 -->
+      <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;">
+        <span style="font-size:12px;color:var(--text2);min-width:96px;">🏢 事務所出発</span>
+        <input type="time" id="officeDepart" oninput="calcTravelTimes()" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:15px;font-weight:700;padding:7px 10px;font-family:'Share Tech Mono',monospace;">
+      </div>
+      <div id="destList"></div>
+      <button class="add-dest-btn" onclick="addDest()">＋ 行先を追加</button>
+    </div>
+
+    <!-- アルコール -->
+    <div class="section-card">
+      <div class="section-title">🍺 アルコールチェック</div>
+
+      <!-- 数値入力 -->
+      <div class="form-row" style="flex-direction:column;align-items:flex-start;gap:8px;">
+        <span class="form-label" style="min-width:unset;">チェッカー測定値</span>
+        <div style="display:flex;align-items:center;gap:10px;width:100%;">
+          <input type="number" step="0.01" min="0" max="9.99" id="alcValue"
+            placeholder="0.00" class="form-input" style="font-family:'Share Tech Mono',monospace;font-size:22px;font-weight:700;text-align:center;max-width:120px;"
+            oninput="onAlcValueChange()">
+          <span style="font-size:13px;color:var(--text2);">mg/L</span>
+          <div id="alcJudge" style="margin-left:auto;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;display:none;"></div>
+        </div>
+        <div style="font-size:11px;color:var(--text2);">※ 基準値：0.15mg/L以上で要報告</div>
+      </div>
+
+      <!-- カメラ撮影 -->
+      <div style="padding:10px 14px;border-bottom:1px solid var(--border);">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:8px;font-weight:500;">本人確認写真</div>
+
+        <!-- カメラプレビュー（撮影前） -->
+        <div id="cameraArea">
+          <video id="cameraVideo" autoplay playsinline muted
+            style="display:none;width:100%;max-width:320px;border-radius:8px;border:1px solid var(--border);background:#000;"></video>
+          <canvas id="cameraCanvas" style="display:none;"></canvas>
+
+          <div id="capturePreview" style="display:none;margin-bottom:10px;position:relative;">
+            <img id="capturedImg" style="width:100%;max-width:320px;border-radius:8px;border:2px solid var(--accent2);" />
+            <div style="position:absolute;top:6px;right:6px;">
+              <button onclick="retakePhoto()"
+                style="background:rgba(0,0,0,0.7);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:11px;padding:4px 8px;cursor:pointer;font-family:inherit;">
+                📷 撮り直す
+              </button>
+            </div>
+            <div style="font-size:11px;color:var(--accent2);margin-top:4px;">✅ 写真を撮影しました</div>
+          </div>
+
+          <div id="cameraButtons" style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button onclick="startCamera()" id="btnStartCamera"
+              style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-weight:700;padding:12px;cursor:pointer;font-family:inherit;transition:all 0.2s;">
+              📷 カメラを起動
+            </button>
+            <button onclick="shootPhoto()" id="btnShoot"
+              style="display:none;flex:1;background:linear-gradient(135deg,#166534,#16a34a);border:none;border-radius:8px;color:white;font-size:13px;font-weight:700;padding:12px;cursor:pointer;font-family:inherit;">
+              ⚡ 撮影する
+            </button>
+            <button onclick="stopCamera()" id="btnStopCamera"
+              style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:12px;padding:12px;cursor:pointer;font-family:inherit;">
+              ✕
+            </button>
+          </div>
+
+          <!-- ファイル選択（カメラ非対応時のフォールバック） -->
+          <div style="margin-top:8px;">
+            <label style="display:flex;align-items:center;gap:6px;color:var(--text2);font-size:12px;cursor:pointer;">
+              <input type="file" accept="image/*" capture="user" id="photoFile"
+                style="display:none;" onchange="onFileSelected(event)">
+              <span style="text-decoration:underline;">📁 ライブラリから選ぶ</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 判定結果 -->
+      <div class="alcohol-row">
+        <span class="alc-label">最終判定</span>
+        <div class="alc-options">
+          <button class="alc-opt ok selected" id="alcOk" onclick="selectAlc('ok')">異常なし</button>
+          <button class="alc-opt ng" id="alcNg" onclick="selectAlc('ng')">要報告</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 燃料 -->
+    <div class="section-card">
+      <div class="section-title">⛽ 給油</div>
+      <div class="form-row" style="gap:12px;flex-wrap:wrap;">
+        <span class="form-label">給油有無</span>
+        <div style="display:flex;gap:8px;">
+          <button class="alc-opt ok" id="fuelNone" onclick="selectFuel('none')" style="border-radius:6px;">なし</button>
+          <button class="alc-opt ok" id="fuelKeiroyu" onclick="selectFuel('keiroyu')" style="border-radius:6px;">軽油</button>
+          <button class="alc-opt ok" id="fuelGasoline" onclick="selectFuel('gasoline')" style="border-radius:6px;">ガソリン</button>
+        </div>
+      </div>
+      <div id="fuelAmountRow" style="display:none;padding:10px 14px;border-top:1px solid var(--border);display:none;align-items:center;gap:10px;">
+        <span class="form-label">給油量</span>
+        <input type="number" id="fuelAmount" min="0" step="0.1" placeholder="0.0"
+          class="form-input" style="max-width:100px;font-family:'Share Tech Mono',monospace;font-size:16px;text-align:center;">
+        <span style="color:var(--text2);font-size:13px;">リットル</span>
+      </div>
+    </div>
+
+    <!-- 備考 -->
+    <div class="section-card">
+      <div class="section-title">📝 備考・記事</div>
+      <div class="form-row">
+        <textarea class="form-input" id="inputMemo" rows="3" placeholder="特記事項があれば記入"></textarea>
+      </div>
+    </div>
+
+    <button class="submit-btn" onclick="submitReport()">
+      ✅ 日報を提出する
+    </button>
+  </div>
+
+  <!-- ======= TAB: HISTORY ======= -->
+  <div class="tab-content" id="contentHistory">
+    <div id="historyList"></div>
+  </div>
+
+  <!-- ======= TAB: ADMIN ======= -->
+  <div class="tab-content" id="contentAdmin">
+    <div class="stats-grid" id="adminStats"></div>
+
+    <div class="filter-row">
+      <select class="filter-select" id="adminFilterDriver" onchange="renderAdmin()">
+        <option value="">全ドライバー</option>
+      </select>
+      <select class="filter-select" id="adminFilterMonth" onchange="renderAdmin()">
+        <option value="">全期間</option>
+      </select>
+    </div>
+
+    <div id="adminList"></div>
+  </div>
+
+  <!-- ======= TAB: 工事台帳 ======= -->
+  <div class="tab-content" id="contentKojiSearch">
+    <div style="margin-bottom:12px;">
+      <div style="position:relative;">
+        <input type="text" id="kojiSearchInput" placeholder="工事No. または 工事名で検索…"
+          oninput="renderKojiSearch()"
+          style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:15px;padding:12px 14px 12px 40px;font-family:inherit;">
+        <span style="position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none;">🔍</span>
+      </div>
+      <div id="kojiSearchCount" style="font-size:11px;color:var(--text2);margin-top:6px;padding-left:2px;"></div>
+    </div>
+    <div id="kojiResultList"></div>
+  </div>
+
+</div>
+
+<!-- ========== PHOTO MODAL ========== -->
+<div class="overlay" id="photoModal" onclick="closePhotoModal()">
+  <div style="max-width:90vw;max-height:90vh;position:relative;">
+    <img id="photoModalImg" style="max-width:90vw;max-height:85vh;border-radius:10px;border:2px solid var(--border);">
+    <button onclick="closePhotoModal()" style="position:absolute;top:-12px;right:-12px;background:var(--surface);border:1px solid var(--border);border-radius:50%;width:28px;height:28px;color:var(--text);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+  </div>
+</div>
+<div class="overlay" id="successOverlay">
+  <div class="success-box">
+    <span class="success-icon">✅</span>
+    <h3>提出完了</h3>
+    <p>日報を保存しました。<br>お疲れ様でした！</p>
+    <button class="ok-btn" onclick="closeSuccess()">OK</button>
+  </div>
+</div>
+
+<script>
+// ========== DATA（スプレッドシートから動的取得）==========
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzKFzXPB7xzpTpqDJZnjJzkasFSBV2YkQa79-thuAfhmv0eT-U4c0SxxmzxdN4NDJkAQg/exec';
+
+let EMPLOYEES = [];
+let KOJI_LIST = [];
+
+// 起動時にスプレッドシートから読み込む
+async function loadMasterData() {
+  const loginBox = document.getElementById('loginBox');
+  const loadingMsg = document.getElementById('loadingMsg');
+  loadingMsg.textContent = '⏳ データを読み込み中…';
+  try {
+    const res = await fetch(GAS_URL + '?api=1');
+    const json = await res.json();
+    if (json.status === 'ok') {
+      EMPLOYEES = json.employees.map((e, i) => ({
+        id: 'E' + String(i+1).padStart(3,'0'),
+        name: e.name,
+        pin: e.pin,
+        isAdmin: e.isAdmin
+      }));
+      KOJI_LIST = json.kojiList;
+      loadingMsg.textContent = '';
+      loginBox.style.display = 'block';
+      initEmployeeSelect();
+    } else {
+      loadingMsg.textContent = '❌ 読み込み失敗。再読み込みしてください。';
+    }
+  } catch (err) {
+    loadingMsg.textContent = '❌ 通信エラー。ネット接続を確認してください。';
+  }
+}
+
+// Storage keys
+const REPORTS_KEY = 'vdr_reports';
+
+function searchKojiInline(input, destId) {
+  const q = input.value.trim().toLowerCase();
+  const dropdown = document.getElementById('koji_dropdown_' + destId);
+  if (!q) { dropdown.style.display = 'none'; return; }
+
+  const results = KOJI_LIST.filter(([no, name]) =>
+    no.toLowerCase().includes(q) || name.includes(q)
+  ).slice(0, 10);
+
+  if (results.length === 0) {
+    dropdown.style.display = 'none';
+    return;
+  }
+
+  dropdown.style.display = 'block';
+  dropdown.innerHTML = results.map(([no, name]) => `
+    <div onclick="selectKoji('${destId}','${no.replace(/'/g,"\\'")}','${name.replace(/'/g,"\\'")}')"
+      style="padding:9px 12px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;gap:10px;align-items:center;"
+      onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
+      <span style="font-family:'Share Tech Mono';font-size:12px;color:var(--accent);white-space:nowrap;">${no}</span>
+      <span style="font-size:12px;line-height:1.4;">${name}</span>
+    </div>
+  `).join('');
+}
+
+function selectKoji(destId, no, name) {
+  const dropdown = document.getElementById('koji_dropdown_' + destId);
+  const selected = document.getElementById('koji_selected_' + destId);
+  const selectedText = document.getElementById('koji_selected_text_' + destId);
+  const block = document.getElementById(destId);
+  const searchInput = block.querySelector('input[placeholder*="工事No"]');
+
+  dropdown.style.display = 'none';
+  searchInput.value = '';
+  selected.style.display = 'flex';
+  selectedText.innerHTML = `<span style="font-family:'Share Tech Mono';color:var(--accent);font-size:12px;">${no}</span>&nbsp; ${name}`;
+  selected.dataset.kojiNo = no;
+  selected.dataset.kojiName = name;
+}
+
+function clearKoji(destId) {
+  const selected = document.getElementById('koji_selected_' + destId);
+  selected.style.display = 'none';
+  selected.dataset.kojiNo = '';
+  selected.dataset.kojiName = '';
+}
+
+// Close dropdowns when tapping outside
+document.addEventListener('click', e => {
+  if (!e.target.closest('[id^="koji_dropdown_"]') && !e.target.placeholder?.includes('工事No')) {
+    document.querySelectorAll('[id^="koji_dropdown_"]').forEach(d => d.style.display = 'none');
+  }
+});
+
+function renderKojiSearch() {
+  const q = document.getElementById('kojiSearchInput').value.trim().toLowerCase();
+  const countEl = document.getElementById('kojiSearchCount');
+  const listEl = document.getElementById('kojiResultList');
+
+  const results = q === ''
+    ? KOJI_LIST.slice(0, 50)
+    : KOJI_LIST.filter(([no, name]) =>
+        no.toLowerCase().includes(q) || name.includes(q)
+      );
+
+  countEl.textContent = q === ''
+    ? `全 ${KOJI_LIST.length} 件 （最新50件表示）`
+    : `${results.length} 件ヒット`;
+
+  if (results.length === 0) {
+    listEl.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div>該当する工事が見つかりません</div>`;
+    return;
+  }
+
+  listEl.innerHTML = results.map(([no, name]) => `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;padding:12px 14px;display:flex;align-items:center;gap:12px;" onclick="copyKojiNo('${no}', this)">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-family:'Share Tech Mono',monospace;font-size:13px;font-weight:700;color:var(--accent);white-space:nowrap;flex-shrink:0;">${no}</div>
+      <div style="font-size:13px;line-height:1.4;flex:1;">${name}</div>
+      <div style="font-size:18px;flex-shrink:0;">📋</div>
+    </div>
+  `).join('');
+}
+
+function copyKojiNo(no, el) {
+  navigator.clipboard.writeText(no).then(() => {
+    const orig = el.style.background;
+    el.style.background = 'rgba(63,185,80,0.15)';
+    el.style.borderColor = 'var(--accent2)';
+    setTimeout(() => { el.style.background = ''; el.style.borderColor = ''; }, 800);
+  }).catch(() => {});
+}
+
+let currentEmployee = null;
+let pinBuffer = '';
+let weatherSelected = '晴';
+let alcSelected = 'ok';
+let destCount = 0;
+
+// ========== STORAGE ==========
+function getReports() {
+  try { return JSON.parse(localStorage.getItem(REPORTS_KEY) || '[]'); } catch { return []; }
+}
+
+function saveReport(r) {
+  const reports = getReports();
+  reports.unshift(r);
+  localStorage.setItem(REPORTS_KEY, JSON.stringify(reports));
+}
+
+// ========== LOGIN ==========
+function initEmployeeSelect() {
+  const sel = document.getElementById('employeeSelect');
+  EMPLOYEES.forEach(e => {
+    const opt = document.createElement('option');
+    opt.value = e.id;
+    opt.textContent = e.name;
+    sel.appendChild(opt);
+  });
+}
+
+function numPress(n) {
+  if (pinBuffer.length >= 4) return;
+  pinBuffer += n;
+  updatePinDots();
+  if (pinBuffer.length === 4) setTimeout(doLogin, 200);
+}
+
+function numDel() {
+  pinBuffer = pinBuffer.slice(0, -1);
+  updatePinDots();
+}
+
+function updatePinDots() {
+  const dots = document.querySelectorAll('.pin-dot');
+  dots.forEach((d, i) => {
+    d.classList.toggle('filled', i < pinBuffer.length);
+  });
+}
+
+function doLogin() {
+  const empId = document.getElementById('employeeSelect').value;
+  const errEl = document.getElementById('errorMsg');
+
+  if (!empId) { errEl.textContent = '社員名を選択してください'; return; }
+  if (pinBuffer.length < 4) { errEl.textContent = 'PINコード4桁を入力してください'; return; }
+
+  const emp = EMPLOYEES.find(e => e.id === empId && e.pin === pinBuffer);
+  if (!emp) {
+    errEl.textContent = 'PINコードが正しくありません';
+    pinBuffer = '';
+    updatePinDots();
+    return;
+  }
+
+  currentEmployee = emp;
+  errEl.textContent = '';
+  pinBuffer = '';
+  updatePinDots();
+
+  // Setup UI
+  const today = new Date();
+  document.getElementById('headerName').innerHTML =
+    emp.name + ' <span class="badge ' + (emp.isAdmin ? 'badge-admin' : 'badge-user') + '">' + (emp.isAdmin ? '管理者' : '一般') + '</span>';
+  document.getElementById('headerDate').textContent = formatDate(today);
+  document.getElementById('inputDate').value = toDateInput(today);
+
+  if (emp.isAdmin) {
+    document.getElementById('tabAdmin').style.display = '';
+    populateAdminFilters();
+  } else {
+    document.getElementById('tabAdmin').style.display = 'none';
+  }
+
+  initDestList();
+  renderHistory();
+
+  showScreen('appScreen');
+}
+
+function doLogout() {
+  currentEmployee = null;
+  document.getElementById('employeeSelect').value = '';
+  switchTab('report');
+  showScreen('loginScreen');
+}
+
+// ========== SCREEN / TAB ==========
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function switchTab(tab) {
+  ['report','kojiSearch','history','admin'].forEach(t => {
+    const btn = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
+    const content = document.getElementById('content' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (btn) btn.classList.toggle('active', t === tab);
+    if (content) content.classList.toggle('active', t === tab);
+  });
+  if (tab === 'history') renderHistory();
+  if (tab === 'admin') renderAdmin();
+  if (tab === 'kojiSearch') renderKojiSearch();
+}
+
+// ========== FORM ==========
+function selectWeather(el, val) {
+  weatherSelected = val;
+  document.querySelectorAll('.weather-opt').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function selectAlc(val) {
+  alcSelected = val;
+  document.getElementById('alcOk').classList.toggle('selected', val === 'ok');
+  document.getElementById('alcNg').classList.toggle('selected', val === 'ng');
+}
+
+let fuelSelected = 'none';
+
+function selectFuel(val) {
+  fuelSelected = val;
+  ['none','keiroyu','gasoline'].forEach(v => {
+    const btn = document.getElementById('fuel' + v.charAt(0).toUpperCase() + v.slice(1));
+    if (btn) btn.classList.toggle('selected', v === val);
+  });
+  const row = document.getElementById('fuelAmountRow');
+  if (val === 'none') {
+    row.style.display = 'none';
+    document.getElementById('fuelAmount').value = '';
+  } else {
+    row.style.display = 'flex';
+  }
+}
+
+// ========== ALCOHOL VALUE ==========
+function onAlcValueChange() {
+  const v = parseFloat(document.getElementById('alcValue').value);
+  const judge = document.getElementById('alcJudge');
+  if (isNaN(v) || document.getElementById('alcValue').value === '') {
+    judge.style.display = 'none';
+    return;
+  }
+  judge.style.display = 'block';
+  if (v >= 0.15) {
+    judge.textContent = '⚠️ 要報告';
+    judge.style.background = 'rgba(248,81,73,0.15)';
+    judge.style.color = 'var(--warn)';
+    judge.style.border = '1px solid var(--warn)';
+    selectAlc('ng');
+  } else {
+    judge.textContent = '✅ 異常なし';
+    judge.style.background = 'rgba(63,185,80,0.15)';
+    judge.style.color = 'var(--accent2)';
+    judge.style.border = '1px solid var(--accent2)';
+    selectAlc('ok');
+  }
+}
+
+// ========== CAMERA ==========
+let cameraStream = null;
+let capturedPhotoData = null;
+
+async function startCamera() {
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+      audio: false
+    });
+    const video = document.getElementById('cameraVideo');
+    video.srcObject = cameraStream;
+    video.style.display = 'block';
+    document.getElementById('btnStartCamera').style.display = 'none';
+    document.getElementById('btnShoot').style.display = '';
+    document.getElementById('btnStopCamera').style.display = '';
+  } catch (e) {
+    alert('カメラにアクセスできませんでした。ライブラリから写真を選んでください。');
+  }
+}
+
+function shootPhoto() {
+  const video = document.getElementById('cameraVideo');
+  const canvas = document.getElementById('cameraCanvas');
+  canvas.width = video.videoWidth || 640;
+  canvas.height = video.videoHeight || 480;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  capturedPhotoData = canvas.toDataURL('image/jpeg', 0.7);
+  showCapturedPhoto(capturedPhotoData);
+  stopCamera();
+}
+
+function stopCamera() {
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream = null;
+  }
+  document.getElementById('cameraVideo').style.display = 'none';
+  document.getElementById('btnShoot').style.display = 'none';
+  document.getElementById('btnStopCamera').style.display = 'none';
+  document.getElementById('btnStartCamera').style.display = '';
+}
+
+function retakePhoto() {
+  capturedPhotoData = null;
+  document.getElementById('capturePreview').style.display = 'none';
+  document.getElementById('cameraButtons').style.display = 'flex';
+  document.getElementById('photoFile').value = '';
+}
+
+function showCapturedPhoto(dataUrl) {
+  document.getElementById('capturedImg').src = dataUrl;
+  document.getElementById('capturePreview').style.display = 'block';
+  document.getElementById('cameraButtons').style.display = 'none';
+}
+
+function onFileSelected(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    capturedPhotoData = ev.target.result;
+    showCapturedPhoto(capturedPhotoData);
+  };
+  reader.readAsDataURL(file);
+}
+
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+}
+
+function calcDistance() {
+  const s = parseInt(document.getElementById('meterStart').value) || 0;
+  const e = parseInt(document.getElementById('meterEnd').value) || 0;
+  const d = e - s;
+  document.getElementById('distanceBadge').textContent = d > 0 ? d + ' km' : '— km';
+}
+
+// ========== DESTINATION ==========
+function initDestList() {
+  destCount = 0;
+  document.getElementById('destList').innerHTML = '';
+  addDest();
+}
+
+function addDest() {
+  destCount++;
+  const id = 'dest_' + destCount;
+  const container = document.getElementById('destList');
+  const div = document.createElement('div');
+  div.id = id;
+  div.style.borderBottom = '1px solid var(--border)';
+  div.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px 4px;">
+      <span style="font-size:11px;color:var(--text2);font-weight:700">行先 ${destCount}</span>
+      ${destCount > 1 ? `<button onclick="removeDest('${id}')" style="background:none;border:none;color:var(--warn);font-size:12px;cursor:pointer;font-family:inherit;">削除</button>` : ''}
+    </div>
+    <div style="padding:0 14px 10px;">
+      <input type="text" placeholder="行先名（例：伏見東緑地）" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;padding:7px 10px;font-family:inherit;margin-bottom:8px;" oninput="calcTravelTimes()">
+
+      <!-- 工事No.検索 -->
+      <div style="position:relative;margin-bottom:8px;">
+        <input type="text" placeholder="🔧 工事No. 入力（例：R610-01）"
+          style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;padding:7px 10px;font-family:'Share Tech Mono',monospace;"
+          oninput="searchKojiInline(this, '${id}')">
+        <div id="koji_dropdown_${id}" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:6px;z-index:50;max-height:180px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,0.4);"></div>
+      </div>
+      <div id="koji_selected_${id}" style="display:none;background:rgba(88,166,255,0.08);border:1px solid rgba(88,166,255,0.25);border-radius:6px;padding:7px 10px;font-size:12px;margin-bottom:8px;align-items:center;gap:8px;justify-content:space-between;">
+        <span id="koji_selected_text_${id}" style="flex:1;line-height:1.4;"></span>
+        <button onclick="clearKoji('${id}')" style="background:none;border:none;color:var(--text2);font-size:14px;cursor:pointer;flex-shrink:0;">✕</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
+        <div>
+          <div style="font-size:10px;color:var(--text2);margin-bottom:3px;">着時間</div>
+          <input type="time" class="arrive-input" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;padding:6px 6px;font-family:'Share Tech Mono',monospace;" oninput="calcTravelTimes()">
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text2);margin-bottom:3px;">発時間</div>
+          <input type="time" class="depart-input" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;padding:6px 6px;font-family:'Share Tech Mono',monospace;" oninput="calcTravelTimes()">
+        </div>
+      </div>
+      <div class="travel-badge-${destCount}" style="display:none;background:rgba(88,166,255,0.08);border:1px solid rgba(88,166,255,0.25);border-radius:6px;padding:5px 10px;font-size:11px;color:var(--accent);">🚗 移動時間: —</div>
+    </div>
+  `;
+  container.appendChild(div);
+  calcTravelTimes();
+}
+
+function removeDest(id) {
+  document.getElementById(id).remove();
+  calcTravelTimes();
+}
+
+function timeToMin(t) {
+  if (!t) return null;
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function calcTravelTimes() {
+  const officeDepart = document.getElementById('officeDepart').value;
+  const blocks = document.getElementById('destList').children;
+  let prevDepart = officeDepart || null;
+  let n = 1;
+  for (const block of blocks) {
+    const arriveInput = block.querySelector('.arrive-input');
+    const departInput = block.querySelector('.depart-input');
+    const badge = block.querySelector(`[class^="travel-badge-"]`);
+    if (!arriveInput || !badge) { n++; continue; }
+    const arrive = arriveInput.value;
+    if (prevDepart && arrive) {
+      const diff = timeToMin(arrive) - timeToMin(prevDepart);
+      if (diff >= 0) {
+        badge.style.display = 'block';
+        badge.textContent = `🚗 移動時間: ${diff}分`;
+      } else {
+        badge.style.display = 'none';
+      }
+    } else {
+      badge.style.display = 'none';
+    }
+    prevDepart = departInput ? departInput.value : null;
+    n++;
+  }
+}
+
+function getDestinations() {
+  const list = [];
+  const container = document.getElementById('destList');
+  const blocks = container.children;
+  const officeDepart = document.getElementById('officeDepart').value;
+  let prevDepart = officeDepart || null;
+  for (const block of blocks) {
+    const inputs = block.querySelectorAll('input');
+    if (inputs.length >= 3) {
+      const arrive = inputs[1].value || '';
+      const depart = inputs[2].value || '';
+      let travel = null;
+      if (prevDepart && arrive) {
+        const diff = timeToMin(arrive) - timeToMin(prevDepart);
+        if (diff >= 0) travel = diff;
+      }
+      const selected = block.querySelector('[id^="koji_selected_"]');
+      const kojiNo = selected ? (selected.dataset.kojiNo || '') : '';
+      const kojiName = selected ? (selected.dataset.kojiName || '') : '';
+      list.push({
+        name: inputs[0].value || '(未記入)',
+        kojiNo,
+        kojiName,
+        arrive,
+        depart,
+        travel
+      });
+      prevDepart = depart || null;
+    }
+  }
+  return list;
+}
+
+function getChecks() {
+  const items = document.querySelectorAll('.check-item');
+  const result = {};
+  items.forEach(item => {
+    const label = item.querySelector('.check-label').textContent;
+    result[label] = item.classList.contains('checked');
+  });
+  return result;
+}
+
+// ========== SUBMIT ==========
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzKFzXPB7xzpTpqDJZnjJzkasFSBV2YkQa79-thuAfhmv0eT-U4c0SxxmzxdN4NDJkAQg/exec';
+
+async function submitReport() {
+  const date = document.getElementById('inputDate').value;
+  if (!date) { alert('日付を選択してください'); return; }
+
+  const meterStart = parseInt(document.getElementById('meterStart').value) || 0;
+  const meterEnd = parseInt(document.getElementById('meterEnd').value) || 0;
+  const distance = meterEnd - meterStart;
+
+  const alcValueRaw = document.getElementById('alcValue').value;
+  const report = {
+    id: Date.now(),
+    employeeId: currentEmployee.id,
+    employeeName: currentEmployee.name,
+    date: date,
+    weather: weatherSelected,
+    vehicle: document.getElementById('inputVehicle').value,
+    passenger: document.getElementById('inputPassenger').value,
+    checks: getChecks(),
+    meterStart, meterEnd, distance,
+    destinations: getDestinations(),
+    officeDepart: document.getElementById('officeDepart').value || '',
+    alcohol: alcSelected,
+    fuelType: fuelSelected,
+    fuelAmount: fuelSelected !== 'none' ? (parseFloat(document.getElementById('fuelAmount').value) || 0) : null,
+    alcValue: alcValueRaw !== '' ? parseFloat(alcValueRaw) : null,
+    alcPhoto: capturedPhotoData || null,
+    memo: document.getElementById('inputMemo').value,
+    submittedAt: new Date().toISOString()
+  };
+
+  // ローカル保存
+  saveReport(report);
+
+  // スプレッドシートに送信
+  const btn = document.querySelector('.submit-btn');
+  btn.textContent = '⏳ 送信中…';
+  btn.disabled = true;
+
+  try {
+    await fetch(GAS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(report)
+    });
+    document.getElementById('successOverlay').classList.add('show');
+  } catch (err) {
+    // no-corsではエラー検知できないので成功扱い
+    document.getElementById('successOverlay').classList.add('show');
+  } finally {
+    btn.textContent = '✅ 日報を提出する';
+    btn.disabled = false;
+  }
+
+  // Reset form
+  document.getElementById('inputPassenger').value = '';
+  document.getElementById('meterStart').value = '';
+  document.getElementById('meterEnd').value = '';
+  document.getElementById('inputMemo').value = '';
+  document.getElementById('officeDepart').value = '';
+  document.getElementById('distanceBadge').textContent = '— km';
+  document.querySelectorAll('.check-item').forEach(i => i.classList.remove('checked'));
+  initDestList();
+  fuelSelected = 'none';
+  selectFuel('none');
+  alcSelected = 'ok';
+  selectAlc('ok');
+  document.getElementById('alcValue').value = '';
+  document.getElementById('alcJudge').style.display = 'none';
+  capturedPhotoData = null;
+  retakePhoto();
+}
+
+function closeSuccess() {
+  document.getElementById('successOverlay').classList.remove('show');
+}
+
+// ========== HISTORY ==========
+function renderHistory() {
+  const container = document.getElementById('historyList');
+  const reports = getReports().filter(r =>
+    currentEmployee.isAdmin ? true : r.employeeId === currentEmployee.id
+  );
+
+  if (reports.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div>日報がまだありません</div>`;
+    return;
+  }
+
+  container.innerHTML = reports.map(r => `
+    <div class="report-card">
+      <div class="report-card-header">
+        <div>
+          <div class="report-date">${r.date} ${r.weather === '晴' ? '☀️' : r.weather === '曇' ? '☁️' : r.weather === '雨' ? '🌧' : '❄️'}</div>
+          <div class="report-driver">${r.employeeName} / ${r.vehicle}</div>
+        </div>
+        <div class="report-km">${r.distance > 0 ? r.distance + ' km' : '--'}</div>
+      </div>
+      <div class="report-body">
+        ${r.officeDepart ? `<div class="report-dest-row"><span class="report-dest-name">🏢 事務所出発</span><span class="report-dest-time">${r.officeDepart}</span></div>` : ''}
+        ${r.destinations.map(d => `
+          <div class="report-dest-row">
+            <span class="report-dest-name">📍 ${d.name}${d.kojiNo ? ` <span style="font-family:'Share Tech Mono';font-size:11px;color:var(--accent);background:var(--surface2);padding:1px 6px;border-radius:4px;">${d.kojiNo}</span>` : ""}</span>
+            <span class="report-dest-time">${d.arrive}→${d.depart}${d.travel ? " 🚗"+d.travel+"分" : ""}</span>
+          </div>
+        `).join('')}
+        ${r.fuelType && r.fuelType !== 'none' ? `<div style="font-size:12px;color:var(--text2);margin-top:4px;">⛽ 給油: ${r.fuelType === 'keiroyu' ? '軽油' : 'ガソリン'} ${r.fuelAmount ? r.fuelAmount + 'L' : ''}</div>` : ''}
+        ${r.alcohol === 'ng' ? '<div style="color:var(--warn);font-size:12px;margin-top:6px;">⚠️ アルコール要報告</div>' : ''}
+        ${r.alcValue !== null && r.alcValue !== undefined ? `<div style="font-size:12px;color:var(--text2);margin-top:4px;">🍺 測定値: <span style="font-family:'Share Tech Mono';color:${r.alcValue >= 0.15 ? 'var(--warn)' : 'var(--accent2)'}">${r.alcValue.toFixed(2)} mg/L</span></div>` : ''}
+        ${r.alcPhoto ? `<div style="margin-top:8px;"><img src="${r.alcPhoto}" style="width:100%;max-width:200px;border-radius:6px;border:1px solid var(--border);cursor:pointer;" onclick="showPhotoModal(this.src)"></div>` : ''}
+        ${r.memo ? `<div style="color:var(--text2);font-size:12px;margin-top:6px;">📝 ${r.memo}</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ========== ADMIN ==========
+function populateAdminFilters() {
+  const driverSel = document.getElementById('adminFilterDriver');
+  EMPLOYEES.forEach(e => {
+    const opt = document.createElement('option');
+    opt.value = e.id;
+    opt.textContent = e.name;
+    driverSel.appendChild(opt);
+  });
+
+  // months
+  const monthSel = document.getElementById('adminFilterMonth');
+  const reports = getReports();
+  const months = [...new Set(reports.map(r => r.date.slice(0, 7)))].sort().reverse();
+  months.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m;
+    opt.textContent = m;
+    monthSel.appendChild(opt);
+  });
+}
+
+function renderAdmin() {
+  const driverFilter = document.getElementById('adminFilterDriver').value;
+  const monthFilter = document.getElementById('adminFilterMonth').value;
+
+  let reports = getReports();
+  if (driverFilter) reports = reports.filter(r => r.employeeId === driverFilter);
+  if (monthFilter) reports = reports.filter(r => r.date.startsWith(monthFilter));
+
+  const totalKm = reports.reduce((s, r) => s + (r.distance || 0), 0);
+  const totalReports = reports.length;
+  const alcoholAlerts = reports.filter(r => r.alcohol === 'ng').length;
+
+  document.getElementById('adminStats').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-num">${totalReports}</div>
+      <div class="stat-label">総日報数</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">${totalKm.toLocaleString()}</div>
+      <div class="stat-label">総走行距離 (km)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:${alcoholAlerts > 0 ? 'var(--warn)' : 'var(--accent2)'}">${alcoholAlerts}</div>
+      <div class="stat-label">アルコール警告</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">${EMPLOYEES.length}</div>
+      <div class="stat-label">登録ドライバー</div>
+    </div>
+  `;
+
+  const container = document.getElementById('adminList');
+  if (reports.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">📊</div>データがありません</div>`;
+    return;
+  }
+
+  container.innerHTML = reports.map(r => `
+    <div class="report-card">
+      <div class="report-card-header">
+        <div>
+          <div class="report-date">${r.date} — ${r.employeeName}</div>
+          <div class="report-driver">${r.vehicle} / ${r.weather}</div>
+        </div>
+        <div class="report-km">${r.distance > 0 ? r.distance + ' km' : '--'}</div>
+      </div>
+      <div class="report-body">
+        ${r.officeDepart ? `<div class="report-dest-row"><span class="report-dest-name">🏢 事務所出発</span><span class="report-dest-time">${r.officeDepart}</span></div>` : ''}
+        ${r.destinations.map(d => `
+          <div class="report-dest-row">
+            <span class="report-dest-name">📍 ${d.name}${d.kojiNo ? ` <span style="font-family:'Share Tech Mono';font-size:11px;color:var(--accent);background:var(--surface2);padding:1px 6px;border-radius:4px;">${d.kojiNo}</span>` : ""}</span>
+            <span class="report-dest-time">${d.arrive}→${d.depart}${d.travel ? " 🚗"+d.travel+"分" : ""}</span>
+          </div>
+        `).join('')}
+        ${r.fuelType && r.fuelType !== 'none' ? `<div style="font-size:12px;color:var(--text2);margin-top:4px;">⛽ 給油: ${r.fuelType === 'keiroyu' ? '軽油' : 'ガソリン'} ${r.fuelAmount ? r.fuelAmount + 'L' : ''}</div>` : ''}
+        ${r.alcohol === 'ng' ? '<div style="color:var(--warn);font-size:12px;margin-top:6px;">⚠️ アルコール要報告</div>' : ''}
+        ${r.alcValue !== null && r.alcValue !== undefined ? `<div style="font-size:12px;color:var(--text2);margin-top:4px;">🍺 測定値: <span style="font-family:'Share Tech Mono';color:${r.alcValue >= 0.15 ? 'var(--warn)' : 'var(--accent2)'}">${r.alcValue.toFixed(2)} mg/L</span></div>` : ''}
+        ${r.alcPhoto ? `<div style="margin-top:8px;"><img src="${r.alcPhoto}" style="width:100%;max-width:200px;border-radius:6px;border:1px solid var(--border);cursor:pointer;" onclick="showPhotoModal(this.src)"></div>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ========== PHOTO MODAL ==========
+function showPhotoModal(src) {
+  document.getElementById('photoModalImg').src = src;
+  document.getElementById('photoModal').classList.add('show');
+}
+function closePhotoModal() {
+  document.getElementById('photoModal').classList.remove('show');
+}
+
+// ========== UTILS ==========
+function formatDate(d) {
+  const days = ['日','月','火','水','木','金','土'];
+  return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 (${days[d.getDay()]})`;
+}
+
+function toDateInput(d) {
+  return d.toISOString().slice(0, 10);
+}
+
+// ========== INIT ==========
+loadMasterData();
+</script>
+</body>
+</html>
